@@ -5,16 +5,18 @@ import "dotenv/config";
 
 const port = Number(process.env.PORT) || 3000;
 
-const app = new Elysia()
+export const app = new Elysia()
   .get("/", () => ({
     message: "Welcome to ElysiaJS + Drizzle + MySQL API",
     status: "running",
     docs: "/health",
   }))
   .use(healthRoutes)
-  .use(usersRoute)
-  .listen(port);
+  .use(usersRoute);
 
-console.log(`🚀 Server is running at http://${app.server?.hostname}:${app.server?.port}`);
+if (process.env.NODE_ENV !== "test") {
+  app.listen(port);
+  console.log(`🚀 Server is running at http://${app.server?.hostname}:${app.server?.port}`);
+}
 
 export type App = typeof app;
