@@ -1,9 +1,14 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db";
-import { users } from "../db/schema";
+import { users, sessions } from "../db/schema";
 
 export interface RegisterUserInput {
   name: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginUserInput {
   email: string;
   password: string;
 }
@@ -12,6 +17,13 @@ export class DuplicateEmailError extends Error {
   constructor(message = "Email sudah terdaftar") {
     super(message);
     this.name = "DuplicateEmailError";
+  }
+}
+
+export class InvalidCredentialsError extends Error {
+  constructor(message = "Email atau password salah") {
+    super(message);
+    this.name = "InvalidCredentialsError";
   }
 }
 
@@ -41,4 +53,34 @@ export const registerUser = async (input: RegisterUserInput) => {
   });
 
   return { success: true };
+};
+
+export const loginUser = async (input: LoginUserInput) => {
+  // Cari user berdasarkan email
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, input.email))
+    .limit(1);
+
+  if (!user) {
+    throw new InvalidCredentialsError("Email atau password salah");
+  }
+
+  // Verifikasi password hash bcrypt
+  const isPasswordValid = await Bun.password.verify(input.password, user.password);
+  if (!isPasswordValid) {
+    throw new InvalidCredentialsError("Email atau password salah");
+  }
+
+  // Generate UUID token untuk sesi user
+  const token = crypto.randomUUID();
+
+  // Simpan session baru
+  await db.insert(sessions).values({
+    token,
+    userId: user.id,
+  });
+
+  return { token };
 };
