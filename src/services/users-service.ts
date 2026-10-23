@@ -34,6 +34,15 @@ export class UnauthorizedError extends Error {
   }
 }
 
+/**
+ * Mendaftarkan pengguna baru ke database.
+ * Memeriksa apakah email sudah terdaftar sebelumnya, melakukan hashing pada password
+ * menggunakan algoritma bcrypt, dan menyimpan data akun ke tabel users.
+ *
+ * @param {RegisterUserInput} input - Data pendaftaran pengguna yang mencakup name, email, dan password.
+ * @returns {Promise<{ success: boolean }>} Objek status keberhasilan pendaftaran user.
+ * @throws {DuplicateEmailError} Dilempar jika alamat email sudah terdaftar di database.
+ */
 export const registerUser = async (input: RegisterUserInput) => {
   // Cek apakah email sudah terdaftar
   const existingUser = await db
@@ -62,6 +71,15 @@ export const registerUser = async (input: RegisterUserInput) => {
   return { success: true };
 };
 
+/**
+ * Mengautentikasi pengguna berdasarkan email dan password.
+ * Memverifikasi hash password bcrypt, membuat token sesi baru (UUID v4),
+ * dan menyimpannya ke tabel sessions untuk melacak sesi aktif pengguna.
+ *
+ * @param {LoginUserInput} input - Kredensial login pengguna yang mencakup email dan password.
+ * @returns {Promise<{ token: string }>} Objek berisi token sesi unik berbentuk UUID v4.
+ * @throws {InvalidCredentialsError} Dilempar jika email tidak ditemukan atau password tidak cocok.
+ */
 export const loginUser = async (input: LoginUserInput) => {
   // Cari user berdasarkan email
   const [user] = await db
@@ -92,6 +110,15 @@ export const loginUser = async (input: LoginUserInput) => {
   return { token };
 };
 
+/**
+ * Mengambil data profil pengguna yang sedang aktif berdasarkan token sesi.
+ * Melakukan query relasi inner join antara tabel sessions dan users,
+ * serta memastikan kolom password tidak pernah disertakan demi keamanan.
+ *
+ * @param {string} token - Token sesi UUID pengguna yang tersimpan di tabel sessions.
+ * @returns {Promise<{ id: number; name: string; email: string; created_at: Date }>} Objek profil pengguna yang terautentikasi.
+ * @throws {UnauthorizedError} Dilempar jika sesi tidak ditemukan atau token tidak valid.
+ */
 export const getCurrentUser = async (token: string) => {
   const [result] = await db
     .select({
@@ -112,6 +139,15 @@ export const getCurrentUser = async (token: string) => {
   return result;
 };
 
+/**
+ * Mengakhiri sesi pengguna (logout) dengan menghapus record sesi dari database.
+ * Melakukan single query DELETE ke tabel sessions berdasarkan token dan memvalidasi
+ * jumlah baris yang terhapus untuk memastikan keberadaan sesi.
+ *
+ * @param {string} token - Token sesi UUID yang akan dihapus dari tabel sessions.
+ * @returns {Promise<{ success: boolean }>} Objek status keberhasilan logout.
+ * @throws {UnauthorizedError} Dilempar jika token sesi tidak ditemukan atau sudah pernah dihapus.
+ */
 export const logoutUser = async (token: string) => {
   const [result]: any = await db
     .delete(sessions)
