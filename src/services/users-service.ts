@@ -111,3 +111,19 @@ export const getCurrentUser = async (token: string) => {
 
   return result;
 };
+
+export const logoutUser = async (token: string) => {
+  const [session] = await db
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(eq(sessions.token, token))
+    .limit(1);
+
+  if (!session) {
+    throw new UnauthorizedError("unauthorized");
+  }
+
+  await db.delete(sessions).where(eq(sessions.id, session.id));
+
+  return { success: true };
+};
