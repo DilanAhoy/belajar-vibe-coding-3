@@ -8,6 +8,13 @@
       "when": 1792743279306,
       "tag": "0000_breezy_tomorrow_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1792756109202,
+      "tag": "0001_bouncy_cyclops",
+      "breakpoints": true
     }
   ]
 }
