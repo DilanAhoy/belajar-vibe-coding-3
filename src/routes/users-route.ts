@@ -18,6 +18,14 @@ function extractBearerToken(authHeader?: string): string | null {
 }
 
 export const usersRoute = new Elysia({ prefix: "/api/users" })
+  .onError(({ code, error, set }) => {
+    if (code === "VALIDATION") {
+      set.status = 400;
+      return {
+        error: error.message,
+      };
+    }
+  })
   .post(
     "/",
     async ({ body, set }) => {
@@ -43,8 +51,8 @@ export const usersRoute = new Elysia({ prefix: "/api/users" })
     },
     {
       body: t.Object({
-        name: t.String({ minLength: 1 }),
-        email: t.String({ format: "email" }),
+        name: t.String({ minLength: 1, maxLength: 255 }),
+        email: t.String({ format: "email", maxLength: 255 }),
         password: t.String({ minLength: 1 }),
       }),
     }
